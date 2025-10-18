@@ -27,7 +27,7 @@ export class UserRepository {
    */
   async findByEmail(email: string): Promise<User | null> {
     const user = await this.prisma.user.findUnique({
-      where: { email, deletedAt: null },
+      where: { email },
     });
     return user ? new User(user) : null;
   }
@@ -39,7 +39,7 @@ export class UserRepository {
    */
   async findById(id: string): Promise<User | null> {
     const user = await this.prisma.user.findUnique({
-      where: { id, deletedAt: null },
+      where: { id },
     });
     return user ? new User(user) : null;
   }
@@ -62,7 +62,6 @@ export class UserRepository {
    * Realiza soft delete de um usuário
    * Define deletedAt com a data atual
    * @param id - ID do usuário
-   * @returns Usuário com deletedAt atualizado
    */
   async softDelete(id: string): Promise<void> {
     await this.prisma.user.update({
