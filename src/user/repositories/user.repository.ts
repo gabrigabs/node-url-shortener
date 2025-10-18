@@ -43,27 +43,6 @@ export class UserRepository {
     });
     return user ? new User(user) : null;
   }
-
-  /**
-   * Atualiza dados de um usuário
-   * @param id - ID do usuário
-   * @param data - Dados a serem atualizados
-   * @returns Usuário atualizado
-   */
-  async update(id: string, data: Prisma.UserUpdateInput): Promise<User> {
-    const existingUser = await this.prisma.user.findUnique({
-      where: { id },
-    });
-    if (!existingUser || existingUser.deletedAt !== null) {
-      throw new NotFoundException('User not found or has been deleted');
-    }
-    const user = await this.prisma.user.update({
-      where: { id },
-      data,
-    });
-    return new User(user);
-  }
-
   /**
    * Realiza soft delete de um usuário
    * Define deletedAt com a data atual
