@@ -1,0 +1,70 @@
+name: CI - lint, test, build
+
+on:
+  push:
+    branches:
+      - main
+      - master
+  pull_request: {}
+
+jobs:
+  ci:
+    name: CI
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: [22.x]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+
+      - name: Install dependencies (pnpm)
+        run: |
+          echo "Installing dependencies with pnpm..."
+          pnpm install --frozen-lockfile
+
+      - name: Run ESLint
+        run: |
+          echo "Checking for lint script and running ESLint if present..."
+          if [ -f package.json ] && grep -q '"lint"' package.json; then
+            pnpm -s lint
+          else
+            echo "No lint script found; skipping."
+          fi
+
+      - name: Run tests
+        env:
+          CI: true
+        run: |
+          echo "Checking for test script and running tests if present..."
+          if [ -f package.json ] && grep -q '"test"' package.json; then
+            pnpm -s test
+          else
+            echo "No test script found; skipping."
+          fi
+
+      - name: Build
+        run: |
+          echo "Checking for build script and running build if present..."
+          if [ -f package.json ] && grep -q '"build"' package.json; then
+            pnpm -s build
+          else
+            echo "No build script found; skipping."
+          fi
+
+      - name: Upload coverage/artifacts (optional)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ci-artifacts
+          path: |
+            coverage
+            test-results
