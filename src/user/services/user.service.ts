@@ -16,6 +16,12 @@ import { UserRepository } from '../repositories/user.repository';
 @Injectable()
 export class UserService {
   private readonly SALT_ROUNDS = 10;
+  private readonly EMAIL_ALREADY_EXISTS_MESSAGE =
+    'Email já cadastrado no sistema';
+  private readonly EMAIL_NOT_FOUND_MESSAGE = 'Usuário não encontrado';
+  private readonly INTERNAL_SERVER_ERROR_MESSAGE =
+    'Erro ao criar usuário. Tente novamente mais tarde ou contate o suporte.';
+  private readonly ALREADY_DELETED_MESSAGE = 'Usuário já foi deletado';
 
   constructor(private readonly userRepository: UserRepository) {}
 
@@ -31,7 +37,7 @@ export class UserService {
 
     const existingUser = await this.userRepository.findByEmail(email);
     if (existingUser) {
-      throw new ConflictException('Email já cadastrado no sistema');
+      throw new ConflictException(this.EMAIL_ALREADY_EXISTS_MESSAGE);
     }
 
     try {
@@ -45,10 +51,10 @@ export class UserService {
       return createdUser.toSafeObject();
     } catch (error) {
       if (error instanceof Error && 'code' in error && error.code === 'P2002') {
-        throw new ConflictException('Email já cadastrado no sistema');
+        throw new ConflictException(this.EMAIL_ALREADY_EXISTS_MESSAGE);
       }
       throw new InternalServerErrorException(
-        'Erro ao criar usuário. Tente novamente.',
+        this.INTERNAL_SERVER_ERROR_MESSAGE,
       );
     }
   }
@@ -73,7 +79,7 @@ export class UserService {
     const user = await this.userRepository.findById(id);
 
     if (!user) {
-      throw new NotFoundException(`Usuário com ID ${id} não encontrado`);
+      throw new NotFoundException(this.EMAIL_NOT_FOUND_MESSAGE);
     }
 
     return user.toSafeObject();
@@ -87,18 +93,14 @@ export class UserService {
    * @throws BadRequestException - Se o usuário já foi deletado
    */
   async softDelete(id: string): Promise<void> {
-    try {
-      const existingUser = await this.userRepository.findById(id);
-      if (existingUser && existingUser.isDeleted()) {
-        throw new BadRequestException(`Usuário com ID ${id} já foi deletado`);
-      }
-      await this.userRepository.softDelete(id);
-    } catch (error) {
-      if (error instanceof Error && 'code' in error && error.code === 'P2025') {
-        throw new NotFoundException(`Usuário com ID ${id} não encontrado`);
-      }
-      throw error;
+    const existingUser = await this.userRepository.findById(id);
+    if (existingUser && existingUser.isDeleted()) {
+      throw new BadRequestException(this.ALREADY_DELETED_MESSAGE);
     }
+    if (!existingUser) {
+      throw new NotFoundException(this.EMAIL_NOT_FOUND_MESSAGE);
+    }
+    await this.userRepository.softDelete(id);
   }
 
   /**
