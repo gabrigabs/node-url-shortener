@@ -51,8 +51,14 @@ export class UserRepository {
    * @returns Usuário atualizado
    */
   async update(id: string, data: Prisma.UserUpdateInput): Promise<User> {
+    const existingUser = await this.prisma.user.findUnique({
+      where: { id },
+    });
+    if (!existingUser || existingUser.deletedAt !== null) {
+      throw new NotFoundException('User not found or has been deleted');
+    }
     const user = await this.prisma.user.update({
-      where: { id, deletedAt: null },
+      where: { id },
       data,
     });
     return new User(user);
