@@ -6,9 +6,9 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
-import { CreateUserDto } from '../dtos/create-user.dto';
 import { User } from '../entities/user.entity';
 import { UserRepository } from '../repositories/user.repository';
+import { RegisterAuthDto } from 'src/auth/dtos/register-auth.dto';
 
 /**
  * Serviço de gerenciamento de usuários
@@ -32,7 +32,9 @@ export class UserService {
    * @throws ConflictException - Se o email já estiver cadastrado
    * @throws InternalServerErrorException - Se houver erro ao criar usuário
    */
-  async create(createUserDto: CreateUserDto): Promise<Omit<User, 'password'>> {
+  async create(
+    createUserDto: RegisterAuthDto,
+  ): Promise<Omit<User, 'password'>> {
     const { email, password } = createUserDto;
 
     const existingUser = await this.userRepository.findByEmail(email);
@@ -64,9 +66,9 @@ export class UserService {
    * @param email - Email do usuário
    * @returns Usuário encontrado ou null
    */
-  async findByEmail(email: string): Promise<Omit<User, 'password'> | null> {
+  async findByEmail(email: string): Promise<User | null> {
     const user = await this.userRepository.findByEmail(email);
-    return user?.toSafeObject() ?? null;
+    return user;
   }
 
   /**
@@ -75,14 +77,9 @@ export class UserService {
    * @returns Usuário encontrado
    * @throws NotFoundException - Se o usuário não for encontrado
    */
-  async findById(id: string): Promise<Omit<User, 'password'>> {
+  async findById(id: string): Promise<Omit<User, 'password'> | null> {
     const user = await this.userRepository.findById(id);
-
-    if (!user) {
-      throw new NotFoundException(this.EMAIL_NOT_FOUND_MESSAGE);
-    }
-
-    return user.toSafeObject();
+    return user?.toSafeObject() ?? null;
   }
 
   /**
