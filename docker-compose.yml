@@ -1,0 +1,49 @@
+version: "3.8"
+
+services:
+  db:
+    image: postgres:15-alpine
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      POSTGRES_USER: ${DATABASE_USER}
+      POSTGRES_PASSWORD: ${DATABASE_PASSWORD}
+      POSTGRES_DB: ${DATABASE_NAME}
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+
+  app-dev:
+    build: .
+    profiles: [ "dev" ]
+    depends_on:
+      - db
+    env_file: .env
+    environment:
+      NODE_ENV: development
+    stdin_open: true
+    tty: true
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./:/app
+      - /app/node_modules
+    command: sh -c "pnpm install --frozen-lockfile && pnpm -s start:dev"
+
+  app-prod:
+    build: .
+    profiles: [ "prod" ]
+    depends_on:
+      - db
+    env_file: .env
+    environment:
+      NODE_ENV: production
+    stdin_open: true
+    tty: true
+    ports:
+      - "3000:3000"
+    command: sh -c "pnpm install --frozen-lockfile && pnpm -s build && node dist/main.js"
+
+volumes:
+  db-data:
