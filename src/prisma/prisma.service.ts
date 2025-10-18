@@ -12,14 +12,14 @@ export class PrismaService
   /**
    * Conecta ao banco de dados quando o módulo é inicializado
    */
-  async onModuleInit() {
+  async onModuleInit(): Promise<void> {
     await this.$connect();
   }
 
   /**
    * Desconecta do banco de dados quando o módulo é destruído
    */
-  async onModuleDestroy() {
+  async onModuleDestroy(): Promise<void> {
     await this.$disconnect();
   }
 }

@@ -14,7 +14,7 @@ export class AppService {
     message: string;
   }> {
     try {
-      await this.prisma.$queryRaw`SELECT 1`;
+      await this.prisma.$queryRawUnsafe('SELECT 1');
       return {
         status: 'success',
         message: '✅ Banco de dados conectado com sucesso',
@@ -22,7 +22,7 @@ export class AppService {
     } catch (error) {
       return {
         status: 'error',
-        message: `❌ Erro ao conectar com o banco: ${error}`,
+        message: `❌ Erro ao conectar com o banco: ${error instanceof Error ? error.message : String(error)}`,
       };
     }
   }
