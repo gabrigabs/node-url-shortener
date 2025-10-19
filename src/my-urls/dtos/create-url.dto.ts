@@ -6,8 +6,10 @@ import {
   MaxLength,
   MinLength,
   Matches,
+  Validate,
 } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
+import { IsPublicUrlConstraint } from '../../shorten/validators/is-public-url.validator';
 
 /**
  * DTO para criação de nova URL encurtada
@@ -28,6 +30,7 @@ export class CreateUrlDto {
     { message: 'URL deve ser válida e começar com http:// ou https://' },
   )
   @IsNotEmpty({ message: 'URL original é obrigatória' })
+  @Validate(IsPublicUrlConstraint)
   originalUrl: string;
 
   /**
