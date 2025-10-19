@@ -14,6 +14,7 @@ import {
   ApiBearerAuth,
   ApiBody,
 } from '@nestjs/swagger';
+import { Throttle } from '@nestjs/throttler';
 import { ShortenService } from '../shorten.service';
 import { CreateUrlDto } from '../dtos/create-url.dto';
 import { OptionalJwtAuthGuard } from '../../auth/guards/optional-jwt-auth.guard';
@@ -36,6 +37,7 @@ export class ShortenController {
    * @returns URL criada com shortCode gerado
    */
   @Post()
+  @Throttle({ short: { limit: 3, ttl: 1000 } })
   @UseGuards(OptionalJwtAuthGuard)
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({
