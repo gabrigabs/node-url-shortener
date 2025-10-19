@@ -2,8 +2,11 @@ import {
   Injectable,
   ConflictException,
   BadRequestException,
+  Inject,
 } from '@nestjs/common';
 import { customAlphabet } from 'nanoid';
+import { WINSTON_MODULE_PROVIDER } from 'nest-winston';
+import { Logger } from 'winston';
 import { UrlRepository } from '../urls/repositories/url.repository';
 import { CreateUrlDto } from './dtos/create-url.dto';
 import { Url } from '../urls/entities/url.entity';
@@ -34,7 +37,10 @@ export class ShortenService {
     this.SHORT_CODE_LENGTH,
   );
 
-  constructor(private readonly urlRepository: UrlRepository) {}
+  constructor(
+    private readonly urlRepository: UrlRepository,
+    @Inject(WINSTON_MODULE_PROVIDER) private readonly logger: Logger,
+  ) {}
 
   /**
    * Cria uma nova URL encurtada para o usuário autenticado
@@ -45,9 +51,23 @@ export class ShortenService {
    */
   async create(userId: string, createUrlDto: CreateUrlDto): Promise<Url> {
     const { originalUrl, customAlias } = createUrlDto;
+    const startTime = Date.now();
+
+    this.logger.info('Creating authenticated URL', {
+      context: 'ShortenService',
+      userId,
+      hasCustomAlias: !!customAlias,
+      originalUrl,
+    });
 
     if (customAlias) {
       if (this.isReservedRoute(customAlias)) {
+        this.logger.warn('Attempted to use reserved route as alias', {
+          context: 'ShortenService',
+          customAlias,
+          userId,
+          originalUrl,
+        });
         throw new BadRequestException(
           `O alias '${customAlias}' é uma rota reservada e não pode ser usado`,
         );
@@ -56,17 +76,36 @@ export class ShortenService {
       const aliasExists =
         await this.urlRepository.customAliasExists(customAlias);
       if (aliasExists) {
+        this.logger.warn('Attempted to use existing alias', {
+          context: 'ShortenService',
+          customAlias,
+          userId,
+          originalUrl,
+        });
         throw new ConflictException(this.ALIAS_ALREADY_EXISTS_MESSAGE);
       }
     }
 
+    const shortCodeStartTime = Date.now();
     const shortCode = await this.generateUniqueShortCode();
+    const shortCodeDuration = Date.now() - shortCodeStartTime;
 
     const url = await this.urlRepository.create({
       originalUrl,
       shortCode,
       customAlias: customAlias ?? null,
       userId,
+    });
+
+    const totalDuration = Date.now() - startTime;
+    this.logger.info('URL created successfully', {
+      context: 'ShortenService',
+      urlId: url.id,
+      shortCode: url.shortCode,
+      customAlias: url.customAlias,
+      userId,
+      shortCodeGenerationTime: `${shortCodeDuration}ms`,
+      totalDuration: `${totalDuration}ms`,
     });
 
     return url;
@@ -79,11 +118,29 @@ export class ShortenService {
    * @returns URL criada
    */
   async createAnonymous(originalUrl: string): Promise<Url> {
+    const startTime = Date.now();
+
+    this.logger.info('Creating anonymous URL', {
+      context: 'ShortenService',
+      originalUrl,
+    });
+
+    const shortCodeStartTime = Date.now();
     const shortCode = await this.generateUniqueShortCode();
+    const shortCodeDuration = Date.now() - shortCodeStartTime;
 
     const url = await this.urlRepository.createAnonymous({
       originalUrl,
       shortCode,
+    });
+
+    const totalDuration = Date.now() - startTime;
+    this.logger.info('Anonymous URL created successfully', {
+      context: 'ShortenService',
+      urlId: url.id,
+      shortCode: url.shortCode,
+      shortCodeGenerationTime: `${shortCodeDuration}ms`,
+      totalDuration: `${totalDuration}ms`,
     });
 
     return url;

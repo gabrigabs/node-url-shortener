@@ -1,5 +1,7 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { Injectable, UnauthorizedException, Inject } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
+import { WINSTON_MODULE_PROVIDER } from 'nest-winston';
+import { Logger } from 'winston';
 import { UserService } from '../../user/services/user.service';
 import { RegisterAuthDto } from '../dtos/register-auth.dto';
 import { LoginAuthDto } from '../dtos/login-auth.dto';
@@ -30,9 +32,11 @@ export interface AuthResponse {
 export class AuthService {
   private readonly INVALID_CREDENTIALS_MESSAGE = 'Credenciais inválidas';
   private readonly ACCOUNT_DEACTIVATED_MESSAGE = 'Conta desativada';
+
   constructor(
     private readonly userService: UserService,
     private readonly jwtService: JwtService,
+    @Inject(WINSTON_MODULE_PROVIDER) private readonly logger: Logger,
   ) {}
 
   /**
@@ -42,22 +46,49 @@ export class AuthService {
    * @throws ConflictException - Se o email já estiver cadastrado
    */
   async register(registerDto: RegisterAuthDto): Promise<AuthResponse> {
-    const user = await this.userService.create(registerDto);
+    const { email } = registerDto;
+    const startTime = Date.now();
 
-    const payload: JwtPayload = {
-      sub: user.id,
-      email: user.email,
-    };
+    this.logger.info('User registration attempt', {
+      context: 'AuthService',
+      email,
+    });
 
-    const access_token = this.jwtService.sign(payload);
+    try {
+      const user = await this.userService.create(registerDto);
 
-    return {
-      access_token,
-      user: {
-        id: user.id,
+      const payload: JwtPayload = {
+        sub: user.id,
         email: user.email,
-      },
-    };
+      };
+
+      const access_token = this.jwtService.sign(payload);
+
+      const duration = Date.now() - startTime;
+      this.logger.info('User registered successfully', {
+        context: 'AuthService',
+        userId: user.id,
+        email: user.email,
+        duration: `${duration}ms`,
+      });
+
+      return {
+        access_token,
+        user: {
+          id: user.id,
+          email: user.email,
+        },
+      };
+    } catch (error) {
+      const duration = Date.now() - startTime;
+      this.logger.error('User registration failed', {
+        context: 'AuthService',
+        email,
+        error: error instanceof Error ? error.message : String(error),
+        duration: `${duration}ms`,
+      });
+      throw error;
+    }
   }
 
   /**
@@ -68,14 +99,33 @@ export class AuthService {
    */
   async login(loginDto: LoginAuthDto): Promise<AuthResponse> {
     const { email, password } = loginDto;
+    const startTime = Date.now();
+
+    this.logger.info('Login attempt', {
+      context: 'AuthService',
+      email,
+    });
 
     const user = await this.userService.findByEmail(email);
 
     if (!user) {
+      const duration = Date.now() - startTime;
+      this.logger.warn('Login failed: user not found', {
+        context: 'AuthService',
+        email,
+        duration: `${duration}ms`,
+      });
       throw new UnauthorizedException(this.INVALID_CREDENTIALS_MESSAGE);
     }
 
     if (user.isDeleted()) {
+      const duration = Date.now() - startTime;
+      this.logger.warn('Login failed: account deactivated', {
+        context: 'AuthService',
+        email,
+        userId: user.id,
+        duration: `${duration}ms`,
+      });
       throw new UnauthorizedException(this.ACCOUNT_DEACTIVATED_MESSAGE);
     }
 
@@ -85,6 +135,13 @@ export class AuthService {
     );
 
     if (!isPasswordValid) {
+      const duration = Date.now() - startTime;
+      this.logger.warn('Login failed: invalid password', {
+        context: 'AuthService',
+        email,
+        userId: user.id,
+        duration: `${duration}ms`,
+      });
       throw new UnauthorizedException(this.INVALID_CREDENTIALS_MESSAGE);
     }
 
@@ -94,6 +151,14 @@ export class AuthService {
     };
 
     const access_token = this.jwtService.sign(payload);
+
+    const duration = Date.now() - startTime;
+    this.logger.info('Login successful', {
+      context: 'AuthService',
+      userId: user.id,
+      email: user.email,
+      duration: `${duration}ms`,
+    });
 
     return {
       access_token,
