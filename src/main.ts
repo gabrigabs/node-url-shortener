@@ -37,7 +37,7 @@ async function bootstrap() {
   const port = process.env.PORT ?? 3000;
   await app.listen(port);
 
-  logger.info('Application started successfully', {
+  logger.info('Aplicação iniciada com sucesso', {
     context: 'Bootstrap',
     port,
     environment: process.env.NODE_ENV || 'development',

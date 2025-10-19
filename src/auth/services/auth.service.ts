@@ -49,7 +49,7 @@ export class AuthService {
     const { email } = registerDto;
     const startTime = Date.now();
 
-    this.logger.info('User registration attempt', {
+    this.logger.info('Tentativa de registro de usuário', {
       context: 'AuthService',
       email,
     });
@@ -65,7 +65,7 @@ export class AuthService {
       const access_token = this.jwtService.sign(payload);
 
       const duration = Date.now() - startTime;
-      this.logger.info('User registered successfully', {
+      this.logger.info('Usuário registrado com sucesso', {
         context: 'AuthService',
         userId: user.id,
         email: user.email,
@@ -81,7 +81,7 @@ export class AuthService {
       };
     } catch (error) {
       const duration = Date.now() - startTime;
-      this.logger.error('User registration failed', {
+      this.logger.error('Falha no registro de usuário', {
         context: 'AuthService',
         email,
         error: error instanceof Error ? error.message : String(error),
@@ -101,7 +101,7 @@ export class AuthService {
     const { email, password } = loginDto;
     const startTime = Date.now();
 
-    this.logger.info('Login attempt', {
+    this.logger.info('Tentativa de login', {
       context: 'AuthService',
       email,
     });
@@ -110,7 +110,7 @@ export class AuthService {
 
     if (!user) {
       const duration = Date.now() - startTime;
-      this.logger.warn('Login failed: user not found', {
+      this.logger.warn('Falha no login: usuário não encontrado', {
         context: 'AuthService',
         email,
         duration: `${duration}ms`,
@@ -120,7 +120,7 @@ export class AuthService {
 
     if (user.isDeleted()) {
       const duration = Date.now() - startTime;
-      this.logger.warn('Login failed: account deactivated', {
+      this.logger.warn('Falha no login: conta desativada', {
         context: 'AuthService',
         email,
         userId: user.id,
@@ -136,7 +136,7 @@ export class AuthService {
 
     if (!isPasswordValid) {
       const duration = Date.now() - startTime;
-      this.logger.warn('Login failed: invalid password', {
+      this.logger.warn('Falha no login: senha inválida', {
         context: 'AuthService',
         email,
         userId: user.id,
@@ -153,7 +153,7 @@ export class AuthService {
     const access_token = this.jwtService.sign(payload);
 
     const duration = Date.now() - startTime;
-    this.logger.info('Login successful', {
+    this.logger.info('Login realizado com sucesso', {
       context: 'AuthService',
       userId: user.id,
       email: user.email,

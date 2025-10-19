@@ -34,7 +34,7 @@ export class RedirectService {
       const cacheDuration = Date.now() - cacheStartTime;
 
       if (url) {
-        this.logger.info('Cache hit for URL', {
+        this.logger.info('Cache encontrado para URL', {
           context: 'RedirectService',
           code,
           urlId: url.id,
@@ -42,18 +42,21 @@ export class RedirectService {
           totalDuration: `${Date.now() - startTime}ms`,
         });
       } else {
-        this.logger.info('Cache miss for URL, querying database', {
-          context: 'RedirectService',
-          code,
-          cacheDuration: `${cacheDuration}ms`,
-        });
+        this.logger.info(
+          'Cache não encontrado para URL, consultando banco de dados',
+          {
+            context: 'RedirectService',
+            code,
+            cacheDuration: `${cacheDuration}ms`,
+          },
+        );
 
         const dbStartTime = Date.now();
         url = await this.urlRepository.findByCode(code);
         const dbDuration = Date.now() - dbStartTime;
 
         if (!url) {
-          this.logger.warn('URL not found', {
+          this.logger.warn('URL não encontrada', {
             context: 'RedirectService',
             code,
             dbDuration: `${dbDuration}ms`,
@@ -66,7 +69,7 @@ export class RedirectService {
         await this.cacheManager.set(cacheKey, url, 3600000);
         const cacheSetDuration = Date.now() - cacheSetStartTime;
 
-        this.logger.info('URL cached successfully', {
+        this.logger.info('URL armazenada em cache com sucesso', {
           context: 'RedirectService',
           code,
           urlId: url.id,
@@ -77,14 +80,14 @@ export class RedirectService {
       }
 
       this.urlRepository.incrementAccessCount(url.id).catch((error: Error) => {
-        this.logger.error('Failed to increment access count', {
+        this.logger.error('Falha ao incrementar contador de acessos', {
           context: 'RedirectService',
           urlId: url.id,
           error: error.message,
         });
       });
 
-      this.logger.info('URL redirect', {
+      this.logger.info('Redirecionamento de URL', {
         context: 'RedirectService',
         code,
         urlId: url.id,
@@ -99,7 +102,7 @@ export class RedirectService {
         throw error;
       }
 
-      this.logger.error('Error in findByCodeAndIncrement', {
+      this.logger.error('Erro em findByCodeAndIncrement', {
         context: 'RedirectService',
         code,
         error: error instanceof Error ? error.message : String(error),
@@ -122,12 +125,12 @@ export class RedirectService {
     try {
       await this.cacheManager.del(cacheKey);
 
-      this.logger.info('Cache invalidated', {
+      this.logger.info('Cache invalidado', {
         context: 'RedirectService',
         code,
       });
     } catch (error) {
-      this.logger.error('Failed to invalidate cache', {
+      this.logger.error('Falha ao invalidar cache', {
         context: 'RedirectService',
         code,
         error: error instanceof Error ? error.message : String(error),

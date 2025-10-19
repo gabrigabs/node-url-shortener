@@ -29,7 +29,7 @@ export class HttpLoggerMiddleware implements NestMiddleware {
     const userAgent = headers['user-agent'] || 'unknown';
     const startTime = Date.now();
 
-    this.logger.info('Incoming request', {
+    this.logger.info('Requisição recebida', {
       context: 'HttpLoggerMiddleware',
       requestId,
       method,
@@ -49,7 +49,7 @@ export class HttpLoggerMiddleware implements NestMiddleware {
       const level =
         statusCode >= 500 ? 'error' : statusCode >= 400 ? 'warn' : 'info';
 
-      loggerInstance[level]('Request completed', {
+      loggerInstance[level]('Requisição concluída', {
         context: 'HttpLoggerMiddleware',
         requestId,
         method,

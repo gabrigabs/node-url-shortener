@@ -45,7 +45,7 @@ export class GlobalExceptionFilter implements ExceptionFilter {
         ? exception.getResponse()
         : { message: 'Internal server error' };
 
-    this.logger.error('Exception caught', {
+    this.logger.error('Erro capturado', {
       context: 'GlobalExceptionFilter',
       requestId,
       method: request.method,

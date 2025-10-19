@@ -53,7 +53,7 @@ export class ShortenService {
     const { originalUrl, customAlias } = createUrlDto;
     const startTime = Date.now();
 
-    this.logger.info('Creating authenticated URL', {
+    this.logger.info('Criando URL autenticada', {
       context: 'ShortenService',
       userId,
       hasCustomAlias: !!customAlias,
@@ -62,7 +62,7 @@ export class ShortenService {
 
     if (customAlias) {
       if (this.isReservedRoute(customAlias)) {
-        this.logger.warn('Attempted to use reserved route as alias', {
+        this.logger.warn('Tentativa de usar rota reservada como alias', {
           context: 'ShortenService',
           customAlias,
           userId,
@@ -76,7 +76,7 @@ export class ShortenService {
       const aliasExists =
         await this.urlRepository.customAliasExists(customAlias);
       if (aliasExists) {
-        this.logger.warn('Attempted to use existing alias', {
+        this.logger.warn('Tentativa de usar alias já existente', {
           context: 'ShortenService',
           customAlias,
           userId,
@@ -98,7 +98,7 @@ export class ShortenService {
     });
 
     const totalDuration = Date.now() - startTime;
-    this.logger.info('URL created successfully', {
+    this.logger.info('URL criada com sucesso', {
       context: 'ShortenService',
       urlId: url.id,
       shortCode: url.shortCode,
@@ -120,7 +120,7 @@ export class ShortenService {
   async createAnonymous(originalUrl: string): Promise<Url> {
     const startTime = Date.now();
 
-    this.logger.info('Creating anonymous URL', {
+    this.logger.info('Criando URL anônima', {
       context: 'ShortenService',
       originalUrl,
     });
@@ -135,7 +135,7 @@ export class ShortenService {
     });
 
     const totalDuration = Date.now() - startTime;
-    this.logger.info('Anonymous URL created successfully', {
+    this.logger.info('URL anônima criada com sucesso', {
       context: 'ShortenService',
       urlId: url.id,
       shortCode: url.shortCode,

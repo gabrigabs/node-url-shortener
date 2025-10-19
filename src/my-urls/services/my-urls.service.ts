@@ -38,7 +38,7 @@ export class MyUrlsService {
   async findAllByUser(userId: string): Promise<Url[]> {
     const startTime = Date.now();
 
-    this.logger.info('Listing URLs for user', {
+    this.logger.info('Listando URLs do usuário', {
       context: 'MyUrlsService',
       userId,
     });
@@ -46,7 +46,7 @@ export class MyUrlsService {
     const urls = await this.urlRepository.findByUserId(userId);
     const duration = Date.now() - startTime;
 
-    this.logger.info('URLs listed successfully', {
+    this.logger.info('URLs listadas com sucesso', {
       context: 'MyUrlsService',
       userId,
       count: urls.length,
@@ -96,7 +96,7 @@ export class MyUrlsService {
     const startTime = Date.now();
     const url = await this.findOneByUser(id, userId);
 
-    this.logger.info('Updating URL', {
+    this.logger.info('Atualizando URL', {
       context: 'MyUrlsService',
       urlId: id,
       userId,
@@ -111,7 +111,7 @@ export class MyUrlsService {
     await this.invalidateUrlCache(url);
 
     const duration = Date.now() - startTime;
-    this.logger.info('URL updated successfully', {
+    this.logger.info('URL atualizada com sucesso', {
       context: 'MyUrlsService',
       urlId: id,
       userId,
@@ -145,7 +145,7 @@ export class MyUrlsService {
       throw new BadRequestException(this.ALREADY_DELETED_MESSAGE);
     }
 
-    this.logger.info('Deleting URL', {
+    this.logger.info('Deletando URL', {
       context: 'MyUrlsService',
       urlId: id,
       userId,
@@ -158,7 +158,7 @@ export class MyUrlsService {
     await this.invalidateUrlCache(url);
 
     const duration = Date.now() - startTime;
-    this.logger.info('URL deleted successfully', {
+    this.logger.info('URL deletada com sucesso', {
       context: 'MyUrlsService',
       urlId: id,
       userId,
@@ -180,13 +180,13 @@ export class MyUrlsService {
         await this.cacheManager.del(`url:${url.customAlias}`);
       }
 
-      this.logger.info('Cache invalidated', {
+      this.logger.info('Cache invalidado', {
         context: 'MyUrlsService',
         shortCode: url.shortCode,
         customAlias: url.customAlias,
       });
     } catch (error) {
-      this.logger.error('Failed to invalidate cache', {
+      this.logger.error('Falha ao invalidar cache', {
         context: 'MyUrlsService',
         urlId: url.id,
         error: error instanceof Error ? error.message : String(error),
