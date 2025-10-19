@@ -3,6 +3,7 @@ import {
   ConflictException,
   BadRequestException,
 } from '@nestjs/common';
+import { customAlphabet } from 'nanoid';
 import { UrlRepository } from '../urls/repositories/url.repository';
 import { CreateUrlDto } from './dtos/create-url.dto';
 import { Url } from '../urls/entities/url.entity';
@@ -23,6 +24,15 @@ export class ShortenService {
     'api',
     'swagger',
   ];
+
+  /**
+   * Gerador de IDs criptograficamente seguro usando nanoid
+   * Usa apenas caracteres alfanuméricos (a-z, A-Z, 0-9)
+   */
+  private readonly nanoid = customAlphabet(
+    'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789',
+    this.SHORT_CODE_LENGTH,
+  );
 
   constructor(private readonly urlRepository: UrlRepository) {}
 
@@ -97,21 +107,12 @@ export class ShortenService {
   }
 
   /**
-   * Gera um código aleatório de 6 caracteres
-   * Usa letras maiúsculas, minúsculas e números
-   * @returns Código aleatório
+   * Gera um código aleatório criptograficamente seguro de 6 caracteres
+   * Usa nanoid com letras maiúsculas, minúsculas e números
+   * @returns Código aleatório seguro
    */
   private generateRandomCode(): string {
-    const characters =
-      'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-    let result = '';
-
-    for (let i = 0; i < this.SHORT_CODE_LENGTH; i++) {
-      const randomIndex = Math.floor(Math.random() * characters.length);
-      result += characters[randomIndex];
-    }
-
-    return result;
+    return this.nanoid();
   }
 
   /**
