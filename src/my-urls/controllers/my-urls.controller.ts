@@ -21,6 +21,8 @@ import {
 import { MyUrlsService } from '../services/my-urls.service';
 import { UpdateUrlDto } from '../dtos/update-url.dto';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
+import { UrlResponseDto } from '../../urls/dtos/url-response.dto';
+import { ErrorResponseDto } from '../../common/dtos/response.dto';
 
 /**
  * Controller de gerenciamento de URLs do usuário autenticado
@@ -43,27 +45,16 @@ export class MyUrlsController {
   @ApiResponse({
     status: 200,
     description: 'Lista de URLs do usuário',
-    schema: {
-      example: [
-        {
-          id: 'uuid-da-url',
-          originalUrl: 'https://www.exemplo.com/pagina',
-          shortCode: 'aB3xY9',
-          customAlias: null,
-          userId: 'uuid-do-usuario',
-          accessCount: 5,
-          createdAt: '2025-10-18T12:00:00.000Z',
-          updatedAt: '2025-10-18T12:00:00.000Z',
-          deletedAt: null,
-        },
-      ],
-    },
+    type: [UrlResponseDto],
   })
   @ApiResponse({
     status: 401,
     description: 'Não autenticado',
+    type: ErrorResponseDto,
   })
-  async findAll(@Request() req: { user: { id: string } }) {
+  async findAll(
+    @Request() req: { user: { id: string } },
+  ): Promise<UrlResponseDto[]> {
     return this.myUrlsService.findAllByUser(req.user.id);
   }
 
@@ -84,19 +75,27 @@ export class MyUrlsController {
   @ApiResponse({
     status: 200,
     description: 'URL encontrada',
+    type: UrlResponseDto,
   })
   @ApiResponse({
     status: 404,
     description: 'URL não encontrada',
+    type: ErrorResponseDto,
   })
   @ApiResponse({
     status: 403,
     description: 'URL não pertence ao usuário',
+    type: ErrorResponseDto,
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Não autenticado',
+    type: ErrorResponseDto,
   })
   async findOne(
     @Request() req: { user: { id: string } },
     @Param('id') id: string,
-  ) {
+  ): Promise<UrlResponseDto> {
     return this.myUrlsService.findOneByUser(id, req.user.id);
   }
 
@@ -120,24 +119,33 @@ export class MyUrlsController {
   @ApiResponse({
     status: 200,
     description: 'URL atualizada com sucesso',
+    type: UrlResponseDto,
   })
   @ApiResponse({
     status: 404,
     description: 'URL não encontrada',
+    type: ErrorResponseDto,
   })
   @ApiResponse({
     status: 403,
     description: 'URL não pertence ao usuário',
+    type: ErrorResponseDto,
   })
   @ApiResponse({
     status: 401,
     description: 'Não autenticado',
+    type: ErrorResponseDto,
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Dados inválidos',
+    type: ErrorResponseDto,
   })
   async update(
     @Request() req: { user: { id: string } },
     @Param('id') id: string,
     @Body() updateUrlDto: UpdateUrlDto,
-  ) {
+  ): Promise<UrlResponseDto> {
     return this.myUrlsService.update(id, req.user.id, updateUrlDto);
   }
 
@@ -164,23 +172,27 @@ export class MyUrlsController {
   @ApiResponse({
     status: 404,
     description: 'URL não encontrada',
+    type: ErrorResponseDto,
   })
   @ApiResponse({
     status: 403,
     description: 'URL não pertence ao usuário',
+    type: ErrorResponseDto,
   })
   @ApiResponse({
     status: 400,
     description: 'URL já foi deletada',
+    type: ErrorResponseDto,
   })
   @ApiResponse({
     status: 401,
     description: 'Não autenticado',
+    type: ErrorResponseDto,
   })
   async remove(
     @Request() req: { user: { id: string } },
     @Param('id') id: string,
-  ) {
+  ): Promise<void> {
     await this.myUrlsService.remove(id, req.user.id);
   }
 }

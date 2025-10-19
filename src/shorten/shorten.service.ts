@@ -2,7 +2,11 @@ import {
   Injectable,
   ConflictException,
   BadRequestException,
+  Inject,
 } from '@nestjs/common';
+import { customAlphabet } from 'nanoid';
+import { WINSTON_MODULE_PROVIDER } from 'nest-winston';
+import { Logger } from 'winston';
 import { UrlRepository } from '../urls/repositories/url.repository';
 import { CreateUrlDto } from './dtos/create-url.dto';
 import { Url } from '../urls/entities/url.entity';
@@ -24,7 +28,19 @@ export class ShortenService {
     'swagger',
   ];
 
-  constructor(private readonly urlRepository: UrlRepository) {}
+  /**
+   * Gerador de IDs criptograficamente seguro usando nanoid
+   * Usa apenas caracteres alfanuméricos (a-z, A-Z, 0-9)
+   */
+  private readonly nanoid = customAlphabet(
+    'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789',
+    this.SHORT_CODE_LENGTH,
+  );
+
+  constructor(
+    private readonly urlRepository: UrlRepository,
+    @Inject(WINSTON_MODULE_PROVIDER) private readonly logger: Logger,
+  ) {}
 
   /**
    * Cria uma nova URL encurtada para o usuário autenticado
@@ -35,9 +51,23 @@ export class ShortenService {
    */
   async create(userId: string, createUrlDto: CreateUrlDto): Promise<Url> {
     const { originalUrl, customAlias } = createUrlDto;
+    const startTime = Date.now();
+
+    this.logger.info('Criando URL autenticada', {
+      context: 'ShortenService',
+      userId,
+      hasCustomAlias: !!customAlias,
+      originalUrl,
+    });
 
     if (customAlias) {
       if (this.isReservedRoute(customAlias)) {
+        this.logger.warn('Tentativa de usar rota reservada como alias', {
+          context: 'ShortenService',
+          customAlias,
+          userId,
+          originalUrl,
+        });
         throw new BadRequestException(
           `O alias '${customAlias}' é uma rota reservada e não pode ser usado`,
         );
@@ -46,17 +76,36 @@ export class ShortenService {
       const aliasExists =
         await this.urlRepository.customAliasExists(customAlias);
       if (aliasExists) {
+        this.logger.warn('Tentativa de usar alias já existente', {
+          context: 'ShortenService',
+          customAlias,
+          userId,
+          originalUrl,
+        });
         throw new ConflictException(this.ALIAS_ALREADY_EXISTS_MESSAGE);
       }
     }
 
+    const shortCodeStartTime = Date.now();
     const shortCode = await this.generateUniqueShortCode();
+    const shortCodeDuration = Date.now() - shortCodeStartTime;
 
     const url = await this.urlRepository.create({
       originalUrl,
       shortCode,
       customAlias: customAlias ?? null,
       userId,
+    });
+
+    const totalDuration = Date.now() - startTime;
+    this.logger.info('URL criada com sucesso', {
+      context: 'ShortenService',
+      urlId: url.id,
+      shortCode: url.shortCode,
+      customAlias: url.customAlias,
+      userId,
+      shortCodeGenerationTime: `${shortCodeDuration}ms`,
+      totalDuration: `${totalDuration}ms`,
     });
 
     return url;
@@ -69,11 +118,29 @@ export class ShortenService {
    * @returns URL criada
    */
   async createAnonymous(originalUrl: string): Promise<Url> {
+    const startTime = Date.now();
+
+    this.logger.info('Criando URL anônima', {
+      context: 'ShortenService',
+      originalUrl,
+    });
+
+    const shortCodeStartTime = Date.now();
     const shortCode = await this.generateUniqueShortCode();
+    const shortCodeDuration = Date.now() - shortCodeStartTime;
 
     const url = await this.urlRepository.createAnonymous({
       originalUrl,
       shortCode,
+    });
+
+    const totalDuration = Date.now() - startTime;
+    this.logger.info('URL anônima criada com sucesso', {
+      context: 'ShortenService',
+      urlId: url.id,
+      shortCode: url.shortCode,
+      shortCodeGenerationTime: `${shortCodeDuration}ms`,
+      totalDuration: `${totalDuration}ms`,
     });
 
     return url;
@@ -97,21 +164,12 @@ export class ShortenService {
   }
 
   /**
-   * Gera um código aleatório de 6 caracteres
-   * Usa letras maiúsculas, minúsculas e números
-   * @returns Código aleatório
+   * Gera um código aleatório criptograficamente seguro de 6 caracteres
+   * Usa nanoid com letras maiúsculas, minúsculas e números
+   * @returns Código aleatório seguro
    */
   private generateRandomCode(): string {
-    const characters =
-      'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-    let result = '';
-
-    for (let i = 0; i < this.SHORT_CODE_LENGTH; i++) {
-      const randomIndex = Math.floor(Math.random() * characters.length);
-      result += characters[randomIndex];
-    }
-
-    return result;
+    return this.nanoid();
   }
 
   /**
