@@ -57,6 +57,6 @@ export class User implements PrismaUser {
   toSafeObject(): Omit<User, 'password'> {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { password, ...safeUser } = this;
-    return safeUser as Omit<User, 'password'>;
+    return new User(safeUser) as Omit<User, 'password'>;
   }
 }
