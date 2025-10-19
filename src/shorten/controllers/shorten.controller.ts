@@ -18,6 +18,8 @@ import { Throttle } from '@nestjs/throttler';
 import { ShortenService } from '../shorten.service';
 import { CreateUrlDto } from '../dtos/create-url.dto';
 import { OptionalJwtAuthGuard } from '../../auth/guards/optional-jwt-auth.guard';
+import { UrlResponseDto } from '../../urls/dtos/url-response.dto';
+import { ErrorResponseDto } from '../../common/dtos/response.dto';
 
 /**
  * Controller responsável pela criação de URLs encurtadas
@@ -48,32 +50,27 @@ export class ShortenController {
   @ApiResponse({
     status: 201,
     description: 'URL encurtada criada com sucesso',
-    schema: {
-      example: {
-        id: 'uuid-da-url',
-        originalUrl: 'https://www.exemplo.com/pagina-longa',
-        shortCode: 'aB3xY9',
-        customAlias: 'meu-link',
-        userId: 'uuid-do-usuario',
-        accessCount: 0,
-        createdAt: '2025-10-18T12:00:00.000Z',
-        updatedAt: '2025-10-18T12:00:00.000Z',
-        deletedAt: null,
-      },
-    },
+    type: UrlResponseDto,
   })
   @ApiResponse({
     status: 409,
     description: 'Alias já está em uso',
+    type: ErrorResponseDto,
   })
   @ApiResponse({
     status: 400,
     description: 'URL inválida ou alias em rota reservada',
+    type: ErrorResponseDto,
+  })
+  @ApiResponse({
+    status: 429,
+    description: 'Muitas requisições (rate limit excedido)',
+    type: ErrorResponseDto,
   })
   async create(
     @Request() req: { user?: { id: string } },
     @Body() createUrlDto: CreateUrlDto,
-  ) {
+  ): Promise<UrlResponseDto> {
     if (req.user) {
       return this.shortenService.create(req.user.id, createUrlDto);
     }

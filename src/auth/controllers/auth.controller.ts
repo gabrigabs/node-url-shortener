@@ -3,6 +3,8 @@ import { ApiTags, ApiOperation, ApiResponse, ApiBody } from '@nestjs/swagger';
 import { AuthService } from '../services/auth.service';
 import { RegisterAuthDto } from '../dtos/register-auth.dto';
 import { LoginAuthDto } from '../dtos/login-auth.dto';
+import { AuthResponseDto } from '../dtos/auth-response.dto';
+import { ErrorResponseDto } from '../../common/dtos/response.dto';
 
 /**
  * Controller de autenticação
@@ -24,25 +26,21 @@ export class AuthController {
   @ApiResponse({
     status: 201,
     description: 'Usuário registrado com sucesso',
-    schema: {
-      example: {
-        access_token: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...',
-        user: {
-          id: 'uuid-do-usuario',
-          email: 'usuario@exemplo.com',
-        },
-      },
-    },
+    type: AuthResponseDto,
   })
   @ApiResponse({
     status: 409,
     description: 'Email já cadastrado',
+    type: ErrorResponseDto,
   })
   @ApiResponse({
     status: 400,
     description: 'Dados inválidos',
+    type: ErrorResponseDto,
   })
-  async register(@Body() registerDto: RegisterAuthDto) {
+  async register(
+    @Body() registerDto: RegisterAuthDto,
+  ): Promise<AuthResponseDto> {
     return this.authService.register(registerDto);
   }
 
@@ -58,25 +56,19 @@ export class AuthController {
   @ApiResponse({
     status: 200,
     description: 'Login realizado com sucesso',
-    schema: {
-      example: {
-        access_token: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...',
-        user: {
-          id: 'uuid-do-usuario',
-          email: 'usuario@exemplo.com',
-        },
-      },
-    },
+    type: AuthResponseDto,
   })
   @ApiResponse({
     status: 401,
     description: 'Credenciais inválidas',
+    type: ErrorResponseDto,
   })
   @ApiResponse({
     status: 400,
     description: 'Dados inválidos',
+    type: ErrorResponseDto,
   })
-  async login(@Body() loginDto: LoginAuthDto) {
+  async login(@Body() loginDto: LoginAuthDto): Promise<AuthResponseDto> {
     return this.authService.login(loginDto);
   }
 }

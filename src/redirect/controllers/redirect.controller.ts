@@ -2,6 +2,7 @@ import { Controller, Get, Param, Res, HttpStatus } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiParam } from '@nestjs/swagger';
 import { Response } from 'express';
 import { RedirectService } from '../redirect.service';
+import { ErrorResponseDto } from '../../common/dtos/response.dto';
 
 /**
  * Controller responsável pelo redirecionamento de URLs encurtadas
@@ -22,6 +23,8 @@ export class RedirectController {
   @Get(':code')
   @ApiOperation({
     summary: 'Redirecionar para URL original',
+    description:
+      'Busca URL por shortCode ou customAlias, incrementa contador de acessos e redireciona',
   })
   @ApiParam({
     name: 'code',
@@ -31,10 +34,20 @@ export class RedirectController {
   @ApiResponse({
     status: 302,
     description: 'Redirecionamento para URL original',
+    headers: {
+      Location: {
+        description: 'URL original para onde redirecionar',
+        schema: {
+          type: 'string',
+          example: 'https://www.exemplo.com/pagina-destino',
+        },
+      },
+    },
   })
   @ApiResponse({
     status: 404,
     description: 'URL não encontrada ou deletada',
+    type: ErrorResponseDto,
   })
   async redirect(@Param('code') code: string, @Res() res: Response) {
     const url = await this.redirectService.findByCodeAndIncrement(code);
