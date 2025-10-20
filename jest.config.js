@@ -27,10 +27,8 @@ export default {
   setupFilesAfterEnv: ['<rootDir>/tests/jest-setup.ts'],
   moduleNameMapper: {
     '^src/(.*)$': '<rootDir>/src/$1',
+    '^nanoid$': '<rootDir>/tests/unit/__mocks__/nanoid.ts',
   },
-  transformIgnorePatterns: [
-    'node_modules/(?!(nanoid)/)',
-  ],
   coverageThreshold: {
     global: {
       branches: 80,
