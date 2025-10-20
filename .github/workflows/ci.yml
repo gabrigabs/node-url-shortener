@@ -83,3 +83,44 @@ jobs:
           path: |
             dist
             test-results
+
+  e2e-tests:
+    name: E2E Tests
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: [22.x]
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+
+      - name: Install dependencies (pnpm)
+        run: |
+          echo "Installing dependencies with pnpm..."
+          pnpm install --frozen-lockfile
+
+      - name: Generate Prisma Client
+        run: |
+          echo "Generating Prisma Client..."
+          pnpm prisma:generate
+
+      - name: Run E2E tests
+        env:
+          CI: true
+          DATABASE_URL: mock://localhost:5432/mock_db
+          JWT_SECRET: test-jwt-secret-e2e
+          BASE_URL: http://localhost:3000
+          PORT: 3000
+        run: |
+          echo "Running E2E tests..."
+          pnpm test:e2e
+      
