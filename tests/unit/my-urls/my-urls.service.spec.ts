@@ -147,7 +147,7 @@ describe('MyUrlsService', () => {
         originalUrl: 'https://example.com',
         shortCode: 'abc123',
         customAlias: null,
-        userId: otherUserId, // URL pertence a outro usuário
+        userId: otherUserId,
         accessCount: 5,
         createdAt: new Date(),
         updatedAt: new Date(),
@@ -176,7 +176,7 @@ describe('MyUrlsService', () => {
         accessCount: 5,
         createdAt: new Date(),
         updatedAt: new Date(),
-        deletedAt: new Date(), // URL deletada
+        deletedAt: new Date(),
       });
 
       mockUrlRepository.findById.mockResolvedValue(mockUrl);
@@ -362,7 +362,7 @@ describe('MyUrlsService', () => {
         accessCount: 5,
         createdAt: new Date(),
         updatedAt: new Date(),
-        deletedAt: new Date(), // Já deletada
+        deletedAt: new Date(),
       });
 
       mockUrlRepository.findById.mockResolvedValue(mockUrl);
@@ -386,6 +386,37 @@ describe('MyUrlsService', () => {
         NotFoundException,
       );
       expect(mockUrlRepository.softDelete).not.toHaveBeenCalled();
+    });
+
+    it('deve continuar mesmo se falhar ao invalidar cache', async () => {
+      const userId = 'user-uuid';
+      const urlId = 'url-uuid';
+      const mockUrl = new Url({
+        id: urlId,
+        originalUrl: 'https://example.com',
+        shortCode: 'abc123',
+        customAlias: 'custom',
+        userId,
+        accessCount: 5,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        deletedAt: null,
+      });
+
+      mockUrlRepository.findById.mockResolvedValue(mockUrl);
+      mockUrlRepository.softDelete.mockResolvedValue(undefined);
+      mockCacheManager.del.mockRejectedValue(new Error('Cache error'));
+
+      await myUrlsService.remove(urlId, userId);
+
+      expect(mockUrlRepository.softDelete).toHaveBeenCalledWith(urlId);
+      expect(mockLogger.error).toHaveBeenCalledWith(
+        'Falha ao invalidar cache',
+        expect.objectContaining({
+          context: 'MyUrlsService',
+          urlId: mockUrl.id,
+        }),
+      );
     });
   });
 });

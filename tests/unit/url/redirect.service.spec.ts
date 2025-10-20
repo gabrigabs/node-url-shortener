@@ -172,6 +172,39 @@ describe('RedirectService', () => {
         expect.any(Object),
       );
     });
+
+    it('deve relançar erro genérico que não seja NotFoundException', async () => {
+      const shortCode = 'abc123';
+      const error = new Error('Generic database error');
+
+      mockCacheManager.get.mockResolvedValue(null);
+      mockUrlRepository.findByCode.mockRejectedValue(error);
+
+      await expect(
+        redirectService.findByCodeAndIncrement(shortCode),
+      ).rejects.toThrow('Generic database error');
+
+      expect(mockLogger.error).toHaveBeenCalledWith(
+        'Erro em findByCodeAndIncrement',
+        expect.objectContaining({
+          context: 'RedirectService',
+          code: shortCode,
+          error: error.message,
+        }),
+      );
+    });
+
+    it('deve relançar NotFoundException', async () => {
+      const shortCode = 'notfound';
+      const notFoundError = new NotFoundException('URL não encontrada');
+
+      mockCacheManager.get.mockResolvedValue(null);
+      mockUrlRepository.findByCode.mockRejectedValue(notFoundError);
+
+      await expect(
+        redirectService.findByCodeAndIncrement(shortCode),
+      ).rejects.toThrow(NotFoundException);
+    });
   });
 
   describe('invalidateCache', () => {

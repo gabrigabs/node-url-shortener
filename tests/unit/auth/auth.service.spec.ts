@@ -231,7 +231,7 @@ describe('AuthService', () => {
         password: 'hashed-password',
         createdAt: new Date(),
         updatedAt: new Date(),
-        deletedAt: new Date(), // Usuário deletado
+        deletedAt: new Date(),
       });
 
       mockUserService.findByEmail.mockResolvedValue(mockUser);
@@ -299,7 +299,7 @@ describe('AuthService', () => {
         password: 'hashed-password',
         createdAt: new Date(),
         updatedAt: new Date(),
-        deletedAt: new Date(), // Usuário deletado
+        deletedAt: new Date(),
       });
 
       mockUserService.findById.mockResolvedValue(mockUser.toSafeObject());

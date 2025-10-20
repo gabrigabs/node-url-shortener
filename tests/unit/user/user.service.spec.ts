@@ -253,7 +253,7 @@ describe('UserService', () => {
         password: 'hashed-password',
         createdAt: new Date(),
         updatedAt: new Date(),
-        deletedAt: new Date(), // Já deletado
+        deletedAt: new Date(),
       });
 
       mockUserRepository.findById.mockResolvedValue(mockDeletedUser);
