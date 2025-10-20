@@ -84,8 +84,15 @@ describe('MyUrlsService', () => {
 
       const result = await myUrlsService.findAllByUser(userId);
 
-      expect(result).toEqual(mockUrls);
       expect(result).toHaveLength(2);
+      expect(result[0]).toHaveProperty(
+        'shortUrl',
+        'http://localhost:3000/abc123',
+      );
+      expect(result[1]).toHaveProperty(
+        'shortUrl',
+        'http://localhost:3000/mylink',
+      );
       expect(mockUrlRepository.findByUserId).toHaveBeenCalledWith(userId);
     });
 
@@ -120,7 +127,8 @@ describe('MyUrlsService', () => {
 
       const result = await myUrlsService.findOneByUser(urlId, userId);
 
-      expect(result).toEqual(mockUrl);
+      expect(result).toHaveProperty('shortUrl', 'http://localhost:3000/abc123');
+      expect(result.id).toBe(urlId);
       expect(mockUrlRepository.findById).toHaveBeenCalledWith(urlId);
     });
 
@@ -219,6 +227,7 @@ describe('MyUrlsService', () => {
       const result = await myUrlsService.update(urlId, userId, updateUrlDto);
 
       expect(result.originalUrl).toBe(updateUrlDto.originalUrl);
+      expect(result.shortUrl).toBe('http://localhost:3000/abc123');
       expect(mockUrlRepository.update).toHaveBeenCalledWith(urlId, {
         originalUrl: updateUrlDto.originalUrl,
       });
