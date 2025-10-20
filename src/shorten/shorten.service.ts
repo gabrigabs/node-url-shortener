@@ -10,6 +10,7 @@ import { Logger } from 'winston';
 import { UrlRepository } from '../urls/repositories/url.repository';
 import { CreateUrlDto } from './dtos/create-url.dto';
 import { Url } from '../urls/entities/url.entity';
+import { UrlResponseDto } from '../urls/dtos/url-response.dto';
 
 /**
  * Serviço responsável pela criação de URLs encurtadas
@@ -27,6 +28,7 @@ export class ShortenService {
     'api',
     'swagger',
   ];
+  private readonly baseUrl: string;
 
   /**
    * Gerador de IDs criptograficamente seguro usando nanoid
@@ -40,7 +42,9 @@ export class ShortenService {
   constructor(
     private readonly urlRepository: UrlRepository,
     @Inject(WINSTON_MODULE_PROVIDER) private readonly logger: Logger,
-  ) {}
+  ) {
+    this.baseUrl = process.env.BASE_URL || 'http://localhost:3000';
+  }
 
   /**
    * Cria uma nova URL encurtada para o usuário autenticado
@@ -49,7 +53,10 @@ export class ShortenService {
    * @returns URL criada
    * @throws ConflictException - Se o customAlias já existir
    */
-  async create(userId: string, createUrlDto: CreateUrlDto): Promise<Url> {
+  async create(
+    userId: string,
+    createUrlDto: CreateUrlDto,
+  ): Promise<UrlResponseDto> {
     const { originalUrl, customAlias } = createUrlDto;
     const startTime = Date.now();
 
@@ -108,7 +115,7 @@ export class ShortenService {
       totalDuration: `${totalDuration}ms`,
     });
 
-    return url;
+    return this.mapToResponseDto(url);
   }
 
   /**
@@ -117,7 +124,7 @@ export class ShortenService {
    * @param originalUrl - URL original a ser encurtada
    * @returns URL criada
    */
-  async createAnonymous(originalUrl: string): Promise<Url> {
+  async createAnonymous(originalUrl: string): Promise<UrlResponseDto> {
     const startTime = Date.now();
 
     this.logger.info('Criando URL anônima', {
@@ -143,7 +150,7 @@ export class ShortenService {
       totalDuration: `${totalDuration}ms`,
     });
 
-    return url;
+    return this.mapToResponseDto(url);
   }
 
   /**
@@ -179,5 +186,28 @@ export class ShortenService {
    */
   private isReservedRoute(alias: string): boolean {
     return this.RESERVED_ROUTES.includes(alias.toLowerCase());
+  }
+
+  /**
+   * Mapeia entidade Url para UrlResponseDto com shortUrl completa
+   * @param url - Entidade URL
+   * @returns DTO de resposta com shortUrl
+   */
+  private mapToResponseDto(url: Url): UrlResponseDto {
+    const code = url.customAlias || url.shortCode;
+    const shortUrl = `${this.baseUrl}/${code}`;
+
+    return {
+      id: url.id,
+      originalUrl: url.originalUrl,
+      shortCode: url.shortCode,
+      customAlias: url.customAlias,
+      shortUrl,
+      userId: url.userId,
+      accessCount: url.accessCount,
+      createdAt: url.createdAt,
+      updatedAt: url.updatedAt,
+      deletedAt: url.deletedAt,
+    };
   }
 }

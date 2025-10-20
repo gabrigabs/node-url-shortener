@@ -12,6 +12,7 @@ import { Logger } from 'winston';
 import { UrlRepository } from '../../urls/repositories/url.repository';
 import { UpdateUrlDto } from '../dtos/update-url.dto';
 import { Url } from '../../urls/entities/url.entity';
+import { UrlResponseDto } from '../../urls/dtos/url-response.dto';
 
 /**
  * Serviço de gerenciamento de URLs do usuário autenticado
@@ -22,12 +23,15 @@ export class MyUrlsService {
   private readonly URL_NOT_BELONGS_TO_USER_MESSAGE =
     'Esta URL não pertence a você';
   private readonly ALREADY_DELETED_MESSAGE = 'URL já foi deletada';
+  private readonly baseUrl: string;
 
   constructor(
     private readonly urlRepository: UrlRepository,
     @Inject(CACHE_MANAGER) private cacheManager: Cache,
     @Inject(WINSTON_MODULE_PROVIDER) private readonly logger: Logger,
-  ) {}
+  ) {
+    this.baseUrl = process.env.BASE_URL || 'http://localhost:3000';
+  }
 
   /**
    * Retorna todas as URLs do usuário autenticado
@@ -35,7 +39,7 @@ export class MyUrlsService {
    * @param userId - ID do usuário autenticado
    * @returns Lista de URLs do usuário
    */
-  async findAllByUser(userId: string): Promise<Url[]> {
+  async findAllByUser(userId: string): Promise<UrlResponseDto[]> {
     const startTime = Date.now();
 
     this.logger.info('Listando URLs do usuário', {
@@ -53,7 +57,7 @@ export class MyUrlsService {
       duration: `${duration}ms`,
     });
 
-    return urls;
+    return urls.map((url) => this.mapToResponseDto(url));
   }
 
   /**
@@ -64,7 +68,7 @@ export class MyUrlsService {
    * @throws NotFoundException - Se a URL não for encontrada
    * @throws ForbiddenException - Se a URL não pertencer ao usuário
    */
-  async findOneByUser(id: string, userId: string): Promise<Url> {
+  async findOneByUser(id: string, userId: string): Promise<UrlResponseDto> {
     const url = await this.urlRepository.findById(id);
 
     if (!url || url.isDeleted()) {
@@ -75,7 +79,7 @@ export class MyUrlsService {
       throw new ForbiddenException(this.URL_NOT_BELONGS_TO_USER_MESSAGE);
     }
 
-    return url;
+    return this.mapToResponseDto(url);
   }
 
   /**
@@ -92,15 +96,24 @@ export class MyUrlsService {
     id: string,
     userId: string,
     updateUrlDto: UpdateUrlDto,
-  ): Promise<Url> {
+  ): Promise<UrlResponseDto> {
     const startTime = Date.now();
-    const url = await this.findOneByUser(id, userId);
+
+    const urlBeforeUpdate = await this.urlRepository.findById(id);
+
+    if (!urlBeforeUpdate || urlBeforeUpdate.isDeleted()) {
+      throw new NotFoundException(this.URL_NOT_FOUND_MESSAGE);
+    }
+
+    if (!urlBeforeUpdate.belongsToUser(userId)) {
+      throw new ForbiddenException(this.URL_NOT_BELONGS_TO_USER_MESSAGE);
+    }
 
     this.logger.info('Atualizando URL', {
       context: 'MyUrlsService',
       urlId: id,
       userId,
-      oldUrl: url.originalUrl,
+      oldUrl: urlBeforeUpdate.originalUrl,
       newUrl: updateUrlDto.originalUrl,
     });
 
@@ -108,7 +121,7 @@ export class MyUrlsService {
       originalUrl: updateUrlDto.originalUrl,
     });
 
-    await this.invalidateUrlCache(url);
+    await this.invalidateUrlCache(urlBeforeUpdate);
 
     const duration = Date.now() - startTime;
     this.logger.info('URL atualizada com sucesso', {
@@ -118,7 +131,7 @@ export class MyUrlsService {
       duration: `${duration}ms`,
     });
 
-    return updatedUrl;
+    return this.mapToResponseDto(updatedUrl);
   }
 
   /**
@@ -172,10 +185,8 @@ export class MyUrlsService {
    */
   private async invalidateUrlCache(url: Url): Promise<void> {
     try {
-      // Invalida cache do shortCode
       await this.cacheManager.del(`url:${url.shortCode}`);
 
-      // Invalida cache do customAlias se existir
       if (url.customAlias) {
         await this.cacheManager.del(`url:${url.customAlias}`);
       }
@@ -192,5 +203,28 @@ export class MyUrlsService {
         error: error instanceof Error ? error.message : String(error),
       });
     }
+  }
+
+  /**
+   * Mapeia entidade Url para UrlResponseDto com shortUrl completa
+   * @param url - Entidade URL
+   * @returns DTO de resposta com shortUrl
+   */
+  private mapToResponseDto(url: Url): UrlResponseDto {
+    const code = url.customAlias || url.shortCode;
+    const shortUrl = `${this.baseUrl}/${code}`;
+
+    return {
+      id: url.id,
+      originalUrl: url.originalUrl,
+      shortCode: url.shortCode,
+      customAlias: url.customAlias,
+      shortUrl,
+      userId: url.userId,
+      accessCount: url.accessCount,
+      createdAt: url.createdAt,
+      updatedAt: url.updatedAt,
+      deletedAt: url.deletedAt,
+    };
   }
 }

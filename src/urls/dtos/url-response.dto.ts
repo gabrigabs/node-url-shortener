@@ -31,6 +31,13 @@ export class UrlResponseDto {
   })
   customAlias: string | null;
 
+  @ApiProperty({
+    description:
+      'URL encurtada completa (usando customAlias se disponível, senão shortCode)',
+    example: 'http://localhost:3000/meu-link-legal',
+  })
+  shortUrl: string;
+
   @ApiPropertyOptional({
     description: 'ID do usuário proprietário (null se anônima)',
     example: '550e8400-e29b-41d4-a716-446655440000',
