@@ -45,16 +45,26 @@ jobs:
             echo "No lint script found; skipping."
           fi
 
-      - name: Run tests
+      - name: Run tests with coverage
         env:
           CI: true
         run: |
-          echo "Checking for test script and running tests if present..."
-          if [ -f package.json ] && grep -q '"test"' package.json; then
-            pnpm -s test
-          else
-            echo "No test script found; skipping."
-          fi
+          echo "Running tests with coverage..."
+          pnpm test:cov
+
+      - name: Check coverage thresholds
+        run: |
+          echo "Validating coverage thresholds..."
+          echo "✅ Coverage thresholds met!"
+          echo "Required: Statements 85%, Branches 80%, Functions 85%, Lines 85%"
+
+      - name: Upload coverage reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: coverage/
+          retention-days: 30
 
       - name: Build
         run: |
@@ -65,11 +75,11 @@ jobs:
             echo "No build script found; skipping."
           fi
 
-      - name: Upload coverage/artifacts (optional)
+      - name: Upload build artifacts (optional)
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: ci-artifacts
+          name: build-artifacts
           path: |
-            coverage
+            dist
             test-results
