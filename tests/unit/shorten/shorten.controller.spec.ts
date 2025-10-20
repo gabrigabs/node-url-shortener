@@ -2,7 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { ShortenController } from '../../../src/shorten/controllers/shorten.controller';
 import { ShortenService } from '../../../src/shorten/shorten.service';
 import { CreateUrlDto } from '../../../src/shorten/dtos/create-url.dto';
-import { Url } from '../../../src/urls/entities/url.entity';
+import { UrlResponseDto } from '../../../src/urls/dtos/url-response.dto';
 
 describe('ShortenController', () => {
   let shortenController: ShortenController;
@@ -39,23 +39,25 @@ describe('ShortenController', () => {
         user: { id: 'user-uuid' },
       };
 
-      const mockUrl = new Url({
+      const mockResponse: UrlResponseDto = {
         id: 'url-uuid',
         originalUrl: createUrlDto.originalUrl,
         shortCode: 'abc123',
         customAlias: 'mylink',
+        shortUrl: 'http://localhost:3000/mylink',
         userId: 'user-uuid',
         accessCount: 0,
         createdAt: new Date(),
         updatedAt: new Date(),
         deletedAt: null,
-      });
+      };
 
-      mockShortenService.create.mockResolvedValue(mockUrl);
+      mockShortenService.create.mockResolvedValue(mockResponse);
 
       const result = await shortenController.create(req, createUrlDto);
 
-      expect(result).toEqual(mockUrl);
+      expect(result).toEqual(mockResponse);
+      expect(result.shortUrl).toBe('http://localhost:3000/mylink');
       expect(mockShortenService.create).toHaveBeenCalledWith(
         'user-uuid',
         createUrlDto,
@@ -70,23 +72,25 @@ describe('ShortenController', () => {
 
       const req = {};
 
-      const mockUrl = new Url({
+      const mockResponse: UrlResponseDto = {
         id: 'url-uuid',
         originalUrl: createUrlDto.originalUrl,
         shortCode: 'abc123',
         customAlias: null,
+        shortUrl: 'http://localhost:3000/abc123',
         userId: null,
         accessCount: 0,
         createdAt: new Date(),
         updatedAt: new Date(),
         deletedAt: null,
-      });
+      };
 
-      mockShortenService.createAnonymous.mockResolvedValue(mockUrl);
+      mockShortenService.createAnonymous.mockResolvedValue(mockResponse);
 
       const result = await shortenController.create(req, createUrlDto);
 
-      expect(result).toEqual(mockUrl);
+      expect(result).toEqual(mockResponse);
+      expect(result.shortUrl).toBe('http://localhost:3000/abc123');
       expect(mockShortenService.createAnonymous).toHaveBeenCalledWith(
         createUrlDto.originalUrl,
       );

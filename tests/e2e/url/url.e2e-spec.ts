@@ -30,11 +30,15 @@ describe('URL E2E Tests (Shorten & Redirect)', () => {
 
         expect(response.body).toHaveProperty('id');
         expect(response.body).toHaveProperty('shortCode');
+        expect(response.body).toHaveProperty('shortUrl');
         expect(response.body.originalUrl).toBe(createUrlDto.originalUrl);
         expect(response.body.shortCode).toHaveLength(6);
         expect(response.body.userId).toBeNull();
         expect(response.body.customAlias).toBeNull();
         expect(response.body.accessCount).toBe(0);
+        expect(response.body.shortUrl).toMatch(
+          /^http:\/\/localhost:3000\/[A-Za-z0-9]{6}$/,
+        );
       });
 
       it('deve gerar shortCode único automaticamente', async () => {
@@ -127,6 +131,10 @@ describe('URL E2E Tests (Shorten & Redirect)', () => {
           .expect(201);
 
         expect(response.body.customAlias).toBe(createUrlDto.customAlias);
+        expect(response.body).toHaveProperty('shortUrl');
+        expect(response.body.shortUrl).toBe(
+          'http://localhost:3000/meu-link-customizado',
+        );
         expect(response.body.shortCode).toBeDefined();
         expect(response.body.id).toBeDefined();
       });

@@ -70,8 +70,10 @@ describe('ShortenService', () => {
 
       const result = await shortenService.create(userId, createUrlDto);
 
-      expect(result).toEqual(mockUrl);
       expect(result.shortCode).toMatch(/^[A-Za-z0-9]{6}$/);
+      expect(result.shortUrl).toBe('http://localhost:3000/abc123');
+      expect(result.id).toBe(mockUrl.id);
+      expect(result.originalUrl).toBe(mockUrl.originalUrl);
       expect(mockUrlRepository.create).toHaveBeenCalledWith({
         originalUrl: createUrlDto.originalUrl,
         shortCode: 'abc123',
@@ -105,8 +107,8 @@ describe('ShortenService', () => {
 
       const result = await shortenService.create(userId, createUrlDto);
 
-      expect(result).toEqual(mockUrl);
       expect(result.customAlias).toBe('mylink');
+      expect(result.shortUrl).toBe('http://localhost:3000/mylink');
       expect(mockUrlRepository.customAliasExists).toHaveBeenCalledWith(
         'mylink',
       );
@@ -180,7 +182,8 @@ describe('ShortenService', () => {
 
       const result = await shortenService.create(userId, createUrlDto);
 
-      expect(result).toEqual(mockUrl);
+      expect(result.id).toBe(mockUrl.id);
+      expect(result.shortUrl).toBe('http://localhost:3000/abc123');
       expect(mockUrlRepository.shortCodeExists).toHaveBeenCalledTimes(2);
     });
 
@@ -208,7 +211,7 @@ describe('ShortenService', () => {
       const result = await shortenService.create(userId, createUrlDto);
 
       expect(result.userId).toBe(userId);
-      expect(result.belongsToUser(userId)).toBe(true);
+      expect(result.shortUrl).toBe('http://localhost:3000/abc123');
     });
   });
 
@@ -233,9 +236,9 @@ describe('ShortenService', () => {
 
       const result = await shortenService.createAnonymous(originalUrl);
 
-      expect(result).toEqual(mockUrl);
+      expect(result.id).toBe(mockUrl.id);
       expect(result.userId).toBeNull();
-      expect(result.isAnonymous()).toBe(true);
+      expect(result.shortUrl).toBe('http://localhost:3000/abc123');
       expect(mockUrlRepository.createAnonymous).toHaveBeenCalledWith({
         originalUrl,
         shortCode: 'abc123',
@@ -263,6 +266,7 @@ describe('ShortenService', () => {
       const result = await shortenService.createAnonymous(originalUrl);
 
       expect(result.shortCode).toMatch(/^[A-Za-z0-9]{6}$/);
+      expect(result.shortUrl).toBe('http://localhost:3000/abc123');
       expect(mockUrlRepository.shortCodeExists).toHaveBeenCalledWith('abc123');
     });
   });
