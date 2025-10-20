@@ -6,6 +6,7 @@ import {
   Request,
   HttpCode,
   HttpStatus,
+  BadRequestException,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -71,6 +72,12 @@ export class ShortenController {
     @Request() req: { user?: { id: string } },
     @Body() createUrlDto: CreateUrlDto,
   ): Promise<UrlResponseDto> {
+    if (!req.user && createUrlDto.customAlias) {
+      throw new BadRequestException(
+        'customAlias não é permitido para usuários não autenticados. Faça login para usar alias personalizados.',
+      );
+    }
+
     if (req.user) {
       return this.shortenService.create(req.user.id, createUrlDto);
     }

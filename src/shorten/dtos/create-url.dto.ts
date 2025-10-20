@@ -15,7 +15,10 @@ export class CreateUrlDto {
     description: 'URL original a ser encurtada',
     example: 'https://www.exemplo.com/pagina-muito-longa',
   })
-  @IsUrl({}, { message: 'URL inválida' })
+  @IsUrl(
+    { require_protocol: true, protocols: ['http', 'https'] },
+    { message: 'URL inválida. Deve começar com http:// ou https://' },
+  )
   @Validate(IsPublicUrlConstraint)
   originalUrl: string;
 
