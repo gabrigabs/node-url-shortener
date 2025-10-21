@@ -1,0 +1,967 @@
+{
+	"info": {
+		"_postman_id": "e46da04e-f850-4de4-8321-94f843206b1a",
+		"name": "URL Shortener API",
+		"description": "Coleção completa de requisições para testar a API de encurtamento de URLs.\n\nInclui:\n- Criação de URLs públicas (anônimas)\n- Criação de URLs autenticadas (com customAlias)\n- Redirecionamento\n- Gerenciamento de URLs (CRUD)\n\nVariáveis necessárias:\n- {{baseUrl}} = http://localhost:3000\n- {{token}} = Bearer token obtido após login",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "17451303"
+	},
+	"item": [
+		{
+			"name": "Auth",
+			"item": [
+				{
+					"name": "Register",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 201) {",
+									"    pm.environment.set(\"userId\", pm.response.json().id);",
+									"}"
+								],
+								"type": "text/javascript",
+								"packages": {},
+								"requests": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"user@example.com\",\n  \"password\": \"senha123\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/auth/register",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"auth",
+								"register"
+							]
+						},
+						"description": "Registra um novo usuário no sistema"
+					},
+					"response": []
+				},
+				{
+					"name": "Login",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 200 || pm.response.code === 201) {",
+									"    const response = pm.response.json();",
+									"    pm.collectionVariables.set(\"token\", response.access_token);",
+									"    console.log(\"Token salvo: \" + response.access_token);",
+									"}"
+								],
+								"type": "text/javascript",
+								"packages": {},
+								"requests": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"user@example.com\",\n  \"password\": \"senha123\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/auth/login",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"auth",
+								"login"
+							]
+						},
+						"description": "Faz login e retorna um JWT token que é salvo automaticamente na variável {{token}}"
+					},
+					"response": []
+				}
+			],
+			"description": "Endpoints de autenticação (registro e login)"
+		},
+		{
+			"name": "URLs - Public",
+			"item": [
+				{
+					"name": "Create Anonymous URL",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 201) {",
+									"    const response = pm.response.json();",
+									"    pm.collectionVariables.set(\"anonymousShortCode\", response.shortCode);",
+									"    pm.collectionVariables.set(\"anonymousUrlId\", response.id);",
+									"    console.log(\"ShortCode criado: \" + response.shortCode);",
+									"    ",
+									"    pm.test(\"URL criada com sucesso\", () => {",
+									"        pm.response.to.have.status(201);",
+									"    });",
+									"    ",
+									"    pm.test(\"userId deve ser null (anônimo)\", () => {",
+									"        pm.expect(response.userId).to.be.null;",
+									"    });",
+									"    ",
+									"    pm.test(\"customAlias deve ser null (anônimo)\", () => {",
+									"        pm.expect(response.customAlias).to.be.null;",
+									"    });",
+									"    ",
+									"    pm.test(\"shortCode deve ter 6 caracteres\", () => {",
+									"        pm.expect(response.shortCode).to.have.lengthOf(6);",
+									"    });",
+									"}"
+								],
+								"type": "text/javascript",
+								"packages": {},
+								"requests": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"originalUrl\": \"https://www.google.com/search?q=nestjs\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/shorten",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"shorten"
+							]
+						},
+						"description": "Cria uma URL encurtada anônima (sem autenticação).\n\nNota: O campo `customAlias` será ignorado pois não há autenticação."
+					},
+					"response": []
+				},
+				{
+					"name": "Create Authenticated URL (no alias)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 201) {",
+									"    const response = pm.response.json();",
+									"    pm.environment.set(\"authShortCode\", response.shortCode);",
+									"    pm.environment.set(\"authUrlId\", response.id);",
+									"    ",
+									"    pm.test(\"URL criada com sucesso\", () => {",
+									"        pm.response.to.have.status(201);",
+									"    });",
+									"    ",
+									"    pm.test(\"userId deve estar preenchido\", () => {",
+									"        pm.expect(response.userId).to.not.be.null;",
+									"    });",
+									"}"
+								],
+								"type": "text/javascript",
+								"packages": {},
+								"requests": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"originalUrl\": \"https://github.com/nestjs/nest\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/shorten",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"shorten"
+							]
+						},
+						"description": "Cria uma URL encurtada autenticada sem customAlias.\n\nRequer: Bearer Token no header Authorization"
+					},
+					"response": []
+				},
+				{
+					"name": "Create Authenticated URL (with alias)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 201) {",
+									"    const response = pm.response.json();",
+									"    pm.collectionVariables.set(\"customAlias\", response.customAlias);",
+									"    pm.collectionVariables.set(\"customAliasUrlId\", response.id);",
+									"    ",
+									"    pm.test(\"URL criada com sucesso\", () => {",
+									"        pm.response.to.have.status(201);",
+									"    });",
+									"    ",
+									"    pm.test(\"customAlias deve estar preenchido\", () => {",
+									"        pm.expect(response.customAlias).to.not.be.null;",
+									"        pm.expect(response.customAlias).to.equal(\"meu-projeto\");",
+									"    });",
+									"    ",
+									"    pm.test(\"userId deve estar preenchido\", () => {",
+									"        pm.expect(response.userId).to.not.be.null;",
+									"    });",
+									"}"
+								],
+								"type": "text/javascript",
+								"packages": {},
+								"requests": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"originalUrl\": \"https://github.com/gabrigabs/node-url-shortener\",\n  \"customAlias\": \"meu-projeto\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/shorten",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"shorten"
+							]
+						},
+						"description": "Cria uma URL encurtada autenticada com customAlias personalizado.\n\nRequisitos do customAlias:\n- 3 a 30 caracteres\n- Apenas [a-z0-9_-]\n- Não pode ser rota reservada\n- Deve ser único"
+					},
+					"response": []
+				},
+				{
+					"name": "Try Reserved Route as Alias",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Deve retornar erro 400\", () => {",
+									"    pm.response.to.have.status(400);",
+									"});",
+									"",
+									"pm.test(\"Mensagem de erro sobre rota reservada\", () => {",
+									"    const response = pm.response.json();",
+									"    pm.expect(response.message).to.include(\"rota reservada\");",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"originalUrl\": \"https://www.example.com\",\n  \"customAlias\": \"auth\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/shorten",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"shorten"
+							]
+						},
+						"description": "Tenta usar uma rota reservada como customAlias.\n\nEsperado: Erro 400 Bad Request\n\nRotas reservadas: auth, docs, my-urls, healthcheck, api, swagger"
+					},
+					"response": []
+				},
+				{
+					"name": "Try Duplicate Alias",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Deve retornar erro 409 Conflict\", () => {",
+									"    pm.response.to.have.status(409);",
+									"});",
+									"",
+									"pm.test(\"Mensagem de erro sobre alias duplicado\", () => {",
+									"    const response = pm.response.json();",
+									"    pm.expect(response.message).to.include(\"já está em uso\");",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {},
+								"requests": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"originalUrl\": \"https://www.outro-site.com\",\n  \"customAlias\": \"meu-projeto\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/shorten",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"shorten"
+							]
+						},
+						"description": "Tenta criar URL com customAlias já existente.\n\nEsperado: Erro 409 Conflict"
+					},
+					"response": []
+				},
+				{
+					"name": "Try Invalid Alias (< 3 chars)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Deve retornar erro 400\", () => {",
+									"    pm.response.to.have.status(400);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"originalUrl\": \"https://www.google.com\",\n  \"customAlias\": \"ab\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/shorten",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"shorten"
+							]
+						},
+						"description": "Tenta criar URL com customAlias menor que 3 caracteres.\n\nEsperado: Erro 400 Bad Request"
+					},
+					"response": []
+				}
+			],
+			"description": "Endpoints públicos de criação de URLs (com e sem autenticação)"
+		},
+		{
+			"name": "URLs - Redirect",
+			"item": [
+				{
+					"name": "Redirect by ShortCode",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Deve retornar 302 Found\", () => {",
+									"    pm.response.to.have.status(302);",
+									"});",
+									"",
+									"pm.test(\"Header Location deve estar presente\", () => {",
+									"    pm.response.to.have.header(\"Location\");",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"protocolProfileBehavior": {
+						"followRedirects": false
+					},
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/{{anonymousShortCode}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"{{anonymousShortCode}}"
+							]
+						},
+						"description": "Redireciona para a URL original usando o shortCode.\n\nRetorna HTTP 302 Found com header Location.\nIncrementa o contador accessCount."
+					},
+					"response": []
+				},
+				{
+					"name": "Redirect by CustomAlias",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Deve retornar 302 Found\", () => {",
+									"    pm.response.to.have.status(302);",
+									"});",
+									"",
+									"pm.test(\"Header Location deve estar presente\", () => {",
+									"    pm.response.to.have.header(\"Location\");",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"protocolProfileBehavior": {
+						"followRedirects": false
+					},
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/{{customAlias}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"{{customAlias}}"
+							]
+						},
+						"description": "Redireciona para a URL original usando o customAlias.\n\nRetorna HTTP 302 Found com header Location.\nIncrementa o contador accessCount."
+					},
+					"response": []
+				},
+				{
+					"name": "Try Redirect to Non-Existent URL",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Deve retornar 404 Not Found\", () => {",
+									"    pm.response.to.have.status(404);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/xyz123",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"xyz123"
+							]
+						},
+						"description": "Tenta acessar URL que não existe.\n\nEsperado: 404 Not Found"
+					},
+					"response": []
+				}
+			],
+			"description": "Endpoints de redirecionamento (públicos)"
+		},
+		{
+			"name": "URLs - Management",
+			"item": [
+				{
+					"name": "List My URLs",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status 200 OK\", () => {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Resposta é um array\", () => {",
+									"    const response = pm.response.json();",
+									"    pm.expect(response).to.be.an('array');",
+									"});",
+									"",
+									"pm.test(\"URLs pertencem ao usuário autenticado\", () => {",
+									"    const response = pm.response.json();",
+									"    response.forEach(url => {",
+									"        pm.expect(url.userId).to.not.be.null;",
+									"    });",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/my-urls",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"my-urls"
+							]
+						},
+						"description": "Lista todas as URLs do usuário autenticado.\n\nExclui URLs soft-deleted.\nRequer: Bearer Token"
+					},
+					"response": []
+				},
+				{
+					"name": "Get URL by ID",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status 200 OK\", () => {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"URL retornada é a solicitada\", () => {",
+									"    const response = pm.response.json();",
+									"    pm.expect(response.id).to.equal(pm.environment.get(\"customAliasUrlId\"));",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {},
+								"requests": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/my-urls/{{customAliasUrlId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"my-urls",
+								"{{customAliasUrlId}}"
+							]
+						},
+						"description": "Busca uma URL específica do usuário por ID.\n\nApenas o proprietário pode acessar.\nRequer: Bearer Token"
+					},
+					"response": []
+				},
+				{
+					"name": "Update URL",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status 200 OK\", () => {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"originalUrl foi atualizada\", () => {",
+									"    const response = pm.response.json();",
+									"    pm.expect(response.originalUrl).to.equal(\"https://github.com/gabrigabs\");",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"originalUrl\": \"https://github.com/gabrigabs\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/my-urls/{{customAliasUrlId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"my-urls",
+								"{{customAliasUrlId}}"
+							]
+						},
+						"description": "Atualiza o originalUrl de uma URL.\n\nApenas o proprietário pode atualizar.\nshortCode e customAlias não são alterados.\nRequer: Bearer Token"
+					},
+					"response": []
+				},
+				{
+					"name": "Delete URL (Soft Delete)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status 204 No Content\", () => {",
+									"    pm.response.to.have.status(204);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/my-urls/{{customAliasUrlId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"my-urls",
+								"{{customAliasUrlId}}"
+							]
+						},
+						"description": "Deleta uma URL (soft delete).\n\nApenas o proprietário pode deletar.\nA URL não é removida do banco, apenas marcada como deletada.\nRequer: Bearer Token"
+					},
+					"response": []
+				},
+				{
+					"name": "Try Access Deleted URL",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Deve retornar 404 Not Found\", () => {",
+									"    pm.response.to.have.status(404);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/{{customAlias}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"{{customAlias}}"
+							]
+						},
+						"description": "Tenta acessar URL que foi soft-deleted.\n\nEsperado: 404 Not Found"
+					},
+					"response": []
+				},
+				{
+					"name": "Try Access Without Token",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Deve retornar 401 Unauthorized\", () => {",
+									"    pm.response.to.have.status(401);",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {},
+								"requests": {}
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/my-urls",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"my-urls"
+							]
+						},
+						"description": "Tenta acessar rota protegida sem token.\n\nEsperado: 401 Unauthorized"
+					},
+					"response": []
+				}
+			],
+			"description": "Endpoints de gerenciamento de URLs (requer autenticação)"
+		},
+		{
+			"name": "Health Check",
+			"item": [
+				{
+					"name": "Health Check",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/healthcheck",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"healthcheck"
+							]
+						},
+						"description": "Verifica o status da aplicação e da conexão com o banco de dados."
+					},
+					"response": []
+				}
+			],
+			"description": "Endpoint de verificação de saúde da aplicação"
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "baseUrl",
+			"value": "http://localhost:3000",
+			"type": "string"
+		},
+		{
+			"key": "token",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "anonymousShortCode",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "authShortCode",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "customAlias",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "anonymousUrlId",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "authUrlId",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "customAliasUrlId",
+			"value": "",
+			"type": "string"
+		}
+	]
+}
