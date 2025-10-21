@@ -111,7 +111,7 @@ Uma **API RESTful moderna e escalável** feita em **NestJS** para encurtamento d
 
 ---
 
-### 4.3. Endpoints da API
+### Endpoints da API
 
 | Método | Endpoint | Descrição | Auth |
 |--------|----------|-----------|------|
@@ -331,7 +331,7 @@ erDiagram
 
 ## 🧰 Instalação e Execução
 
-### 9.1. Pré-requisitos
+### Pré-requisitos
 
 Certifique-se de ter instalado:
 
@@ -347,7 +347,7 @@ npm install -g pnpm
 
 ---
 
-### 9.2. Passo a Passo
+### Passo a Passo
 
 #### **1️⃣ Clone o repositório**
 
@@ -464,7 +464,7 @@ pnpm start:prod
 
 ## 🚦 Testes
 
-### 10.1. Testes Unitários
+### Testes Unitários
 
 Localizados em `/tests/unit/`, organizados por módulo com mocks do Prisma:
 
@@ -481,7 +481,7 @@ pnpm test:cov
 
 **Cobertura mínima exigida:** 80% (branches, functions, lines, statements)
 
-### 10.2. Testes E2E (End-to-End)
+### Testes E2E (End-to-End)
 
 Localizados em `/tests/e2e/`, testam fluxos completos da aplicação:
 
@@ -496,7 +496,7 @@ pnpm test:e2e:cov
 pnpm test:e2e:watch
 ```
 
-### 10.3. Estrutura de Testes
+### Estrutura de Testes
 
 ```
 tests/
@@ -534,7 +534,7 @@ tests/
 └── jest-setup.ts                 # Configuração global do Jest
 ```
 
-### 10.4. Cobertura de Testes
+### Cobertura de Testes
 
 Os testes cobrem:
 - ✅ Autenticação (registro, login, validação JWT)
@@ -576,7 +576,7 @@ Após iniciar a aplicação, acesse a documentação interativa:
 ## 🌐 Variáveis de Ambiente
 
 | Variável | Descrição | Valor Padrão |
-|----------|-----------|--------------|-------------|
+|-----------|------------|---------------|
 | `NODE_ENV` | Ambiente de execução | `development` |
 | `PORT` | Porta da aplicação | `3000` |
 | `DATABASE_HOST` | Host do PostgreSQL | `localhost` |
@@ -590,6 +590,7 @@ Após iniciar a aplicação, acesse a documentação interativa:
 | `BASE_URL` | Domínio base para URLs encurtadas | `http://localhost:3000` |
 | `REDIS_HOST` | Host do Redis | `localhost` |
 | `REDIS_PORT` | Porta do Redis | `6379` |
+
 
 ### Exemplo completo de `.env`:
 
