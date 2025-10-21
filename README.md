@@ -142,7 +142,7 @@ A aplicação segue os princípios de **Clean Architecture** e **Domain-Driven D
 
 ### Organização de Camadas
 
-```
+```mermaid
 graph TD
   src["src/"]
   main[/"main.ts, app.module.ts, app.controller.ts, app.service.ts"/]
@@ -208,8 +208,9 @@ flowchart TD
         B["Auth Module<br/>(JWT, Login/Register)"]
         C["User Module<br/>(User Service)"]
         D["Shorten Module<br/>(Encurtar URLs)"]
-        E["Redirect Module<br/>(Redirecionar)"]
-        F["My-Urls Module<br/>(CRUD URLs)"]
+        E["Redirect Module<br/>(Redirecionar + Cache)"]
+        F["My-Urls Module<br/>(CRUD URLs + Invalidação Cache)"]
+        U["URLs Module<br/>(Repositories, Entities, DTOs)"]
         G["Prisma Service<br/>(ORM)"]
         R["Redis Cache<br/>(Performance)"]
     end
@@ -225,11 +226,14 @@ flowchart TD
     A -->|HTTP/JSON| F
     
     B -->|Valida credenciais| C
-    C -->|CRUD User| G
-    D -->|Gera shortCode| G
-    E -->|Busca URL| R
-    R -->|Cache Miss| G
-    F -->|CRUD URLs do user| G
+    C -->|Operações CRUD| G
+    D -->|Cria URL| U
+    E -->|Busca URL| U
+    E -->|Cache Hit| R
+    E -->|Cache Miss| U
+    F -->|Gerencia URLs| U
+    F -->|Invalida Cache| R
+    U -->|Operações CRUD| G
     
     G -->|SQL Queries| H
     G -->|SQL Queries| I
@@ -248,17 +252,19 @@ flowchart TD
     B{URL válida?}
     C[Retorna 400 Bad Request]
     D{Tem customAlias?}
-    E[Valida formato do alias]
-    F{Alias válido?}
-    G{Alias disponível?}
-    H[Retorna 409 Conflict]
-    I{Usuário autenticado?}
-    J[Extrai userId do JWT]
-    K[Define userId = null]
-    L[Gera shortCode Base62<br/>6 caracteres]
-    M{shortCode único?}
-    N[Salva URL no banco]
-    O[Monta shortUrl completa<br/>BASE_URL + shortCode]
+    E{Usuário autenticado?}
+    F[Retorna 400<br/>CustomAlias requer autenticação]
+    G[Valida formato do alias]
+    H{Alias válido?}
+    I{Alias disponível?}
+    J[Retorna 409 Conflict<br/>Alias já existe]
+    K{Usuário autenticado?}
+    L[Extrai userId do JWT]
+    M[Define userId = null]
+    N[Gera shortCode Base62<br/>6 caracteres]
+    O{shortCode único?}
+    P[Salva URL no banco]
+    Q[Monta shortUrl completa<br/>BASE_URL + código]
     End([Retorna 201 Created])
 
     Start --> A
@@ -266,21 +272,23 @@ flowchart TD
     B -->|Não| C
     B -->|Sim| D
     D -->|Sim| E
-    E --> F
-    F -->|Não| C
-    F -->|Sim| G
-    G -->|Não| H
-    D -->|Não| I
-    G -->|Sim| I
-    I -->|Sim| J
-    I -->|Não| K
-    J --> L
-    K --> L
-    L --> M
-    M -->|Não| L
-    M -->|Sim| N
+    E -->|Não| F
+    E -->|Sim| G
+    G --> H
+    H -->|Não| C
+    H -->|Sim| I
+    I -->|Não| J
+    I -->|Sim| L
+    D -->|Não| K
+    K -->|Sim| L
+    K -->|Não| M
+    L --> N
+    M --> N
     N --> O
-    O --> End
+    O -->|Não| N
+    O -->|Sim| P
+    P --> Q
+    Q --> End
 ```
 
 ---
